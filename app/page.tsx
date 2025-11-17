@@ -1,6 +1,6 @@
 'use client';
 
-import { Image as ImageIcon, Zap, Download, Sparkles, Menu, X, Loader2 } from 'lucide-react';
+import { Image as ImageIcon, Zap, Download, Sparkles, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { ImageUploader } from '@/components/ImageUploader';
@@ -9,19 +9,17 @@ import { ImagePreview } from '@/components/ImagePreview';
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const {
-    uploadedImages,
-    processedImages,
-    status,
+    images,
+    isProcessing,
     error,
-    handleFileUpload,
-    processAllImages,
-    downloadImage,
+    processImages,
     removeImage,
+    downloadProcessedImage,
     clearAll
   } = useImageProcessor();
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <main className="min-h-screen bg-linear-to-b from-blue-50 to-white">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
         <div className="w-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -92,8 +90,8 @@ export default function HomePage() {
         {/* Upload Area */}
         <div className="max-w-3xl mx-auto mb-16">
           <ImageUploader 
-            onFilesSelected={handleFileUpload}
-            disabled={status === 'processing'}
+            onFilesSelected={processImages}
+            disabled={isProcessing}
           />
           
           {/* Error Message */}
@@ -104,22 +102,11 @@ export default function HomePage() {
           )}
           
           {/* Action Buttons */}
-          {uploadedImages.length > 0 && (
+          {images.length > 0 && (
             <div className="mt-6 flex items-center justify-center space-x-4">
               <button
-                onClick={processAllImages}
-                disabled={status === 'processing'}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold px-8 py-3 rounded-lg transition-colors flex items-center space-x-2"
-              >
-                {status === 'processing' && <Loader2 className="w-5 h-5 animate-spin" />}
-                <span>
-                  {status === 'processing' ? 'Обработка...' : `Обработать (${uploadedImages.length})`}
-                </span>
-              </button>
-              
-              <button
                 onClick={clearAll}
-                disabled={status === 'processing'}
+                disabled={isProcessing}
                 className="text-gray-600 hover:text-gray-900 font-semibold px-6 py-3 rounded-lg transition-colors"
               >
                 Очистить всё
@@ -129,17 +116,17 @@ export default function HomePage() {
         </div>
         
         {/* Processed Images Grid */}
-        {processedImages.length > 0 && (
+        {images.length > 0 && (
           <div className="max-w-6xl mx-auto mb-16">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               Результаты обработки
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {processedImages.map((image) => (
+              {images.map((image) => (
                 <ImagePreview
                   key={image.id}
                   image={image}
-                  onDownload={() => downloadImage(image)}
+                  onDownload={() => downloadProcessedImage(image)}
                   onRemove={() => removeImage(image.id)}
                 />
               ))}
@@ -187,7 +174,7 @@ export default function HomePage() {
         </div>
 
         {/* Use Cases */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-12 text-white max-w-5xl mx-auto">
+        <div className="bg-linear-to-r from-blue-600 to-purple-600 rounded-2xl p-12 text-white max-w-5xl mx-auto">
           <div className="flex items-center justify-center mb-6">
             <Sparkles className="w-8 h-8 mr-3" />
             <h2 className="text-3xl font-bold">Для чего использовать?</h2>

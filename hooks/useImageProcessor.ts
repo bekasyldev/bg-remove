@@ -1,187 +1,144 @@
-// Custom hook for image processing logic
-
-import { useState, useCallback } from 'react';
-import { removeBackground } from '@/lib/api/background-removal';
-import { 
-  isValidImageFile, 
-  isValidImageSize, 
-  createImagePreview,
-  downloadBlob,
-  generateId 
-} from '@/lib/utils/image-utils';
-import { UploadedImage, ProcessedImage, ProcessingStatus } from '@/lib/types';
+import { useState } from 'react';
+import { ProcessedImage } from '@/lib/types';
+import { validateImage, createImagePreview, generateImageId } from '@/lib/utils/image-utils';
 
 export function useImageProcessor() {
-  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
-  const [processedImages, setProcessedImages] = useState<ProcessedImage[]>([]);
-  const [status, setStatus] = useState<ProcessingStatus>('idle');
+  const [images, setImages] = useState<ProcessedImage[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Validate and upload image files
-   */
-  const handleFileUpload = useCallback((files: File[]) => {
+  const processImages = async (files: File[]) => {
+    setIsProcessing(true);
     setError(null);
-    const validFiles: UploadedImage[] = [];
-    const errors: string[] = [];
-
-    files.forEach((file) => {
-      if (!isValidImageFile(file)) {
-        errors.push(`${file.name}: Неподдерживаемый формат файла`);
-        return;
+    
+    for (const file of files) {
+      // Validate image
+      const validation = validateImage(file);
+      if (!validation.isValid) {
+        setError(validation.error || 'Invalid file');
+        continue;
       }
 
-      if (!isValidImageSize(file)) {
-        errors.push(`${file.name}: Размер файла превышает 10MB`);
-        return;
-      }
+      const imageId = generateImageId();
+      const originalUrl = createImagePreview(file);
+      
+      // Add to state immediately with processing status
+      const newImage: ProcessedImage = {
+        id: imageId,
+        originalUrl,
+        processedUrl: null,
+        originalFile: file,
+        status: 'processing',
+        error: null,
+      };
+      
+      setImages(prev => [...prev, newImage]);
 
-      validFiles.push({
-        file,
-        preview: createImagePreview(file),
-        id: generateId(),
+      try {
+        // Send to server for processing (using server power, not client)
+        const formData = new FormData();
+        formData.append('image', file);
+
+        console.log('Sending image to server for processing:', file.name);
+
+        const response = await fetch('/api/remove-background', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+          setImages(prev => prev.map(img => 
+            img.id === imageId 
+              ? { ...img, processedUrl: result.imageUrl, status: 'completed' }
+              : img
+          ));
+        } else {
+          throw new Error(result.error || 'Server processing failed');
+        }
+        
+      } catch (error) {
+        console.error('Server processing error:', error);
+        setImages(prev => prev.map(img => 
+          img.id === imageId 
+            ? { 
+                ...img, 
+                status: 'error', 
+                error: error instanceof Error ? error.message : 'Server processing failed' 
+              }
+            : img
+        ));
+      }
+    }
+
+    setIsProcessing(false);
+  };
+
+  const removeImage = (imageId: string) => {
+    setImages(prev => {
+      return prev.filter(img => {
+        if (img.id === imageId) {
+          // Cleanup URLs
+          if (img.originalUrl) URL.revokeObjectURL(img.originalUrl);
+          if (img.processedUrl && img.processedUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(img.processedUrl);
+          }
+          return false;
+        }
+        return true;
       });
     });
+  };
 
-    if (errors.length > 0) {
-      setError(errors.join('\n'));
+  const downloadProcessedImage = (image: ProcessedImage) => {
+    if (image.processedUrl && image.originalFile) {
+      // For blob URLs, fetch and download
+      if (image.processedUrl.startsWith('blob:')) {
+        fetch(image.processedUrl)
+          .then(response => response.blob())
+          .then(blob => {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `processed_${image.originalFile.name.replace(/\.[^/.]+$/, '')}.png`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+          })
+          .catch(console.error);
+      }
+      // For base64 images
+      else if (image.processedUrl.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = image.processedUrl;
+        link.download = `processed_${image.originalFile.name.replace(/\.[^/.]+$/, '')}.png`;
+        link.click();
+      }
     }
+  };
 
-    if (validFiles.length > 0) {
-      setUploadedImages((prev) => [...prev, ...validFiles]);
-    }
-
-    return validFiles;
-  }, []);
-
-  /**
-   * Process a single image
-   */
-  const processImage = useCallback(async (uploadedImage: UploadedImage) => {
-    setStatus('processing');
-    setError(null);
-
-    const processedImage: ProcessedImage = {
-      id: uploadedImage.id,
-      originalUrl: uploadedImage.preview,
-      processedUrl: '',
-      status: 'processing',
-    };
-
-    setProcessedImages((prev) => [...prev, processedImage]);
-
-    try {
-      const resultBlob = await removeBackground(uploadedImage.file);
-      const processedUrl = URL.createObjectURL(resultBlob);
-
-      setProcessedImages((prev) =>
-        prev.map((img) =>
-          img.id === uploadedImage.id
-            ? { ...img, processedUrl, status: 'completed' }
-            : img
-        )
-      );
-
-      setStatus('completed');
-      return { success: true, blob: resultBlob, url: processedUrl };
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка обработки изображения';
-      
-      setProcessedImages((prev) =>
-        prev.map((img) =>
-          img.id === uploadedImage.id
-            ? { ...img, status: 'error', error: errorMessage }
-            : img
-        )
-      );
-
-      setStatus('error');
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    }
-  }, []);
-
-  /**
-   * Process all uploaded images
-   */
-  const processAllImages = useCallback(async () => {
-    if (uploadedImages.length === 0) {
-      setError('Нет изображений для обработки');
-      return;
-    }
-
-    setStatus('processing');
-    setError(null);
-
-    const results = await Promise.allSettled(
-      uploadedImages.map((img) => processImage(img))
-    );
-
-    const hasErrors = results.some((result) => result.status === 'rejected');
-    setStatus(hasErrors ? 'error' : 'completed');
-  }, [uploadedImages, processImage]);
-
-  /**
-   * Download processed image
-   */
-  const downloadImage = useCallback(async (processedImage: ProcessedImage) => {
-    if (processedImage.status !== 'completed' || !processedImage.processedUrl) {
-      setError('Изображение еще не обработано');
-      return;
-    }
-
-    try {
-      const response = await fetch(processedImage.processedUrl);
-      const blob = await response.blob();
-      downloadBlob(blob, `removed-bg-${processedImage.id}.png`);
-    } catch (err) {
-      setError('Ошибка при скачивании изображения');
-    }
-  }, []);
-
-  /**
-   * Clear all images
-   */
-  const clearAll = useCallback(() => {
-    // Revoke object URLs to free memory
-    uploadedImages.forEach((img) => URL.revokeObjectURL(img.preview));
-    processedImages.forEach((img) => {
-      if (img.processedUrl) URL.revokeObjectURL(img.processedUrl);
+  const clearAll = () => {
+    // Cleanup all URLs
+    images.forEach(img => {
+      if (img.originalUrl) URL.revokeObjectURL(img.originalUrl);
+      if (img.processedUrl && img.processedUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(img.processedUrl);
+      }
     });
-
-    setUploadedImages([]);
-    setProcessedImages([]);
-    setStatus('idle');
+    setImages([]);
     setError(null);
-  }, [uploadedImages, processedImages]);
-
-  /**
-   * Remove specific image
-   */
-  const removeImage = useCallback((imageId: string) => {
-    setUploadedImages((prev) => {
-      const img = prev.find((i) => i.id === imageId);
-      if (img) URL.revokeObjectURL(img.preview);
-      return prev.filter((i) => i.id !== imageId);
-    });
-
-    setProcessedImages((prev) => {
-      const img = prev.find((i) => i.id === imageId);
-      if (img?.processedUrl) URL.revokeObjectURL(img.processedUrl);
-      return prev.filter((i) => i.id !== imageId);
-    });
-  }, []);
+  };
 
   return {
-    uploadedImages,
-    processedImages,
-    status,
+    images,
+    isProcessing,
     error,
-    handleFileUpload,
-    processImage,
-    processAllImages,
-    downloadImage,
-    clearAll,
+    processImages,
     removeImage,
+    downloadProcessedImage,
+    clearAll,
   };
 }

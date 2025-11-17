@@ -9,9 +9,10 @@ export interface UploadedImage {
 export interface ProcessedImage {
   id: string;
   originalUrl: string;
-  processedUrl: string;
+  processedUrl: string | null;
+  originalFile: File;
   status: 'processing' | 'completed' | 'error';
-  error?: string;
+  error?: string | null;
 }
 
 export interface ApiResponse<T> {

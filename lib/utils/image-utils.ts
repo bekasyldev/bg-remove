@@ -50,6 +50,40 @@ export async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 /**
+ * Validate image file
+ */
+export function validateImage(file: File): { isValid: boolean; error?: string } {
+  if (!isValidImageFile(file)) {
+    return { isValid: false, error: `${file.name}: Неподдерживаемый формат файла` };
+  }
+
+  if (!isValidImageSize(file)) {
+    return { isValid: false, error: `${file.name}: Размер файла превышает 10MB` };
+  }
+
+  return { isValid: true };
+}
+
+/**
+ * Generate unique image ID
+ */
+export function generateImageId(): string {
+  return generateId();
+}
+
+/**
+ * Download image from URL
+ */
+export function downloadImage(url: string, filename: string): void {
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/**
  * Generate unique ID
  */
 export function generateId(): string {
