@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       model: 'small',
       output: {
         format: 'image/png',
-        quality: 0.9
+        quality: 0.8 // Reduced from 0.9 for faster encoding
       }
     });
 
