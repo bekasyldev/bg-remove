@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { removeBackground } from '@imgly/background-removal-node';
-import sharp from 'sharp';
-import { writeFile, unlink } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
+import { createHash } from 'crypto';
+
+const processedCache = new Map<string, { dataURL: string; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; 
+
+function generateHash(buffer: Buffer): string {
+  return createHash('md5').update(buffer).digest('hex');
+}
+
+function cleanCache() {
+  const now = Date.now();
+  for (const [key, value] of processedCache.entries()) {
+    if (now - value.timestamp > CACHE_TTL) {
+      processedCache.delete(key);
+    }
+  }
+}
 
 export async function POST(request: NextRequest) {
-  let tempInputPath: string | null = null;
-  
   try {
     const formData = await request.formData();
     const file = formData.get('image') as File;
@@ -34,26 +45,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Processing image on server:', file.name, 'Size:', file.size);
+    console.log('🚀 Processing image on server:', file.name, 'Size:', file.size);
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const inputBuffer = Buffer.from(bytes);
 
-    // Save to temporary file
-    tempInputPath = join(tmpdir(), `input-${Date.now()}.png`);
-    
-    // Convert image to PNG format using Sharp
-    console.log('Converting image to compatible PNG format...');
-    const pngBuffer = await sharp(inputBuffer)
-      .png()
-      .toBuffer();
-    
-    await writeFile(tempInputPath, pngBuffer);
-    console.log('Image converted and saved, now removing background...');
+    // Check cache
+    const hash = generateHash(inputBuffer);
+    const cached = processedCache.get(hash);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+      return NextResponse.json({
+        success: true,
+        imageUrl: cached.dataURL,
+        originalName: file.name,
+        size: cached.dataURL.length,
+        cached: true
+      });
+    }
 
-    // Remove background using file path
-    const blob = await removeBackground(tempInputPath);
+    cleanCache();
+
+    const processingStart = Date.now();
+
+    // Convert Buffer to Blob (library accepts Blob, not Buffer)
+    const inputBlob = new Blob([inputBuffer], { type: file.type });
+    
+    const blob = await removeBackground(inputBlob, {
+      model: 'small',
+      output: {
+        format: 'image/png',
+        quality: 0.9
+      }
+    });
+
+    const processingTime = Date.now() - processingStart;
 
     // Convert Blob to buffer
     const resultBuffer = Buffer.from(await blob.arrayBuffer());
@@ -61,27 +87,21 @@ export async function POST(request: NextRequest) {
     // Generate data URL
     const dataURL = `data:image/png;base64,${resultBuffer.toString('base64')}`;
 
-    console.log('Background removed successfully on server, result size:', resultBuffer.length);
+    // Cache the result
+    processedCache.set(hash, { dataURL, timestamp: Date.now() });
 
-    // Clean up temp file
-    if (tempInputPath) {
-      await unlink(tempInputPath).catch(console.error);
-    }
+    console.log('✅ Background removed successfully in', processingTime, 'ms, result size:', resultBuffer.length);
 
-    // Return the processed image as data URL
     return NextResponse.json({
       success: true,
       imageUrl: dataURL,
       originalName: file.name,
-      size: resultBuffer.length
+      size: resultBuffer.length,
+      processingTime,
+      cached: false
     });
   } catch (error) {
-    console.error('Server-side background removal error:', error);
-    
-    // Clean up temp file on error
-    if (tempInputPath) {
-      await unlink(tempInputPath).catch(console.error);
-    }
+    console.error('❌ Server-side background removal error:', error);
     
     return NextResponse.json(
       { 
@@ -91,6 +111,20 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function GET() {
+  return NextResponse.json({
+    status: 'ok',
+    cacheSize: processedCache.size,
+    model: 'medium',
+    features: [
+      'Server-side processing with ONNX Runtime',
+      'Automatic CPU threading optimization',
+      'Result caching with 5min TTL',
+      'Direct Buffer processing (no file I/O)'
+    ]
+  });
 }
 
 export const runtime = 'nodejs';
