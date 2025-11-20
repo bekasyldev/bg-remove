@@ -223,6 +223,20 @@ export default function HomePage() {
           </button>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-300 py-8">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <p className="text-sm">
+              ИП Баландин Виталий Николаевич
+            </p>
+            <p className="text-sm mt-1">
+              ИНН 781005876562
+            </p>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
