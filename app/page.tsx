@@ -1,11 +1,106 @@
 'use client';
 
-import { Image as ImageIcon, Zap, Download, Sparkles, Menu, X, CheckCircle2, ArrowRight, Layers } from 'lucide-react';
-import { useState } from 'react';
+import { Image as ImageIcon, Zap, Download, Sparkles, Menu, X, CheckCircle2, ArrowRight, Layers, MoveHorizontal } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { ImageUploader } from '@/components/ImageUploader';
 import { ImagePreview } from '@/components/ImagePreview';
+
+interface BeforeAfterCardProps {
+  beforeImage: string;
+  afterImage: string;
+  alt: string;
+  label: string;
+}
+
+const BeforeAfterCard = ({ beforeImage, afterImage, alt, label }: BeforeAfterCardProps) => {
+  const [sliderPosition, setSliderPosition] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMove = (event: React.MouseEvent | React.TouchEvent | globalThis.MouseEvent | globalThis.TouchEvent) => {
+    if (!containerRef.current) return;
+    
+    const { left, width } = containerRef.current.getBoundingClientRect();
+    const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX; 
+    const position = ((clientX - left) / width) * 100;
+    
+    setSliderPosition(Math.min(Math.max(position, 0), 100));
+  };
+
+  const handleMouseDown = () => setIsDragging(true);
+  const handleMouseUp = () => setIsDragging(false);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('touchmove', handleMove);
+      window.addEventListener('touchend', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [isDragging]);
+
+  return (
+    <div className="group relative w-full aspect-[4/5] rounded-2xl overflow-hidden border border-slate-200 shadow-lg select-none">
+      <div 
+        ref={containerRef}
+        className="absolute inset-0 z-20 cursor-ew-resize"
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleMouseDown}
+        onClick={handleMove}
+      />
+
+      <div className="absolute inset-0 bg-[url('https://media.istockphoto.com/id/1145618475/vector/checkered-geometric-vector-background-with-black-and-gray-tile-transparency-grid-seamless.jpg?s=612x612&w=0&k=20&c=H0f2tC2a1O-vPq2YqW4LgX4ZfQ5hZ3ZqK9qX5j1x5w=')] bg-repeat bg-[length:20px_20px]">
+        <img 
+          src={afterImage} 
+          alt={`${alt} after`} 
+          className="w-full h-full object-cover"
+          draggable={false}
+        />
+        <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white pointer-events-none">
+          Без фона
+        </div>
+      </div>
+
+      <div 
+        className="absolute inset-0 overflow-hidden"
+        style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
+      >
+        <img 
+          src={beforeImage} 
+          alt={`${alt} before`} 
+          className="w-full h-full object-cover" 
+          draggable={false}
+        />
+        <div className="absolute bottom-4 left-4 bg-white/50 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-slate-900 pointer-events-none">
+          Оригинал
+        </div>
+      </div>
+
+      <div 
+        className="absolute top-0 bottom-0 w-1 bg-white z-10 pointer-events-none shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+        style={{ left: `${sliderPosition}%` }}
+      >
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-indigo-600">
+          <MoveHorizontal size={16} />
+        </div>
+      </div>
+      
+      <div className="absolute top-4 left-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <span className="bg-indigo-600/90 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm">
+          {label}
+        </span>
+      </div>
+    </div>
+  );
+};
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -33,17 +128,36 @@ export default function HomePage() {
     clearAll
   } = useImageProcessor();
 
+  const examples = [
+    {
+      id: 1,
+      label: "Обувь",
+      before: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=600&auto=format&fit=crop",
+      after: "/sneakers.png"
+    },
+    {
+      id: 2,
+      label: "Одежда",
+      before: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop",
+      after: "/clothes.png"
+    },
+    {
+      id: 3,
+      label: "Предметы",
+      before: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600&auto=format&fit=crop",
+      after: "/headphones.png"
+    }
+  ];
+
   return (
     <div className="relative min-h-screen bg-slate-50 selection:bg-indigo-500/30 text-slate-900 overflow-hidden font-sans">
       
-      {/* Background Aurora Effects */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
         <div className="absolute top-[-10%] right-[0%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px]" />
         <div className="absolute top-[20%] left-[-10%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px]" />
       </div>
 
-      {/* Header */}
       <motion.header 
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -60,7 +174,6 @@ export default function HomePage() {
               </span>
             </div>
             
-            {/* Desktop Nav */}
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Возможности</a>
               <a href="#use-cases" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Применение</a>
@@ -69,7 +182,6 @@ export default function HomePage() {
               </a>
             </div>
             
-            {/* Mobile Menu Button */}
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
@@ -79,7 +191,6 @@ export default function HomePage() {
           </nav>
         </div>
         
-        {/* Mobile Menu Dropdown */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div 
@@ -101,8 +212,7 @@ export default function HomePage() {
       </motion.header>
 
       <main className="pt-32 pb-20">
-        {/* Hero Section */}
-        <section id="remove" className="container mx-auto px-4 relative z-10">
+        <section id="remove" className="container mx-auto px-4 relative z-10 mb-20">
           <motion.div 
             initial="initial"
             animate="animate"
@@ -127,14 +237,12 @@ export default function HomePage() {
             </motion.p>
           </motion.div>
 
-          {/* Interactive Upload Card */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.3 }}
             className="max-w-4xl mx-auto relative"
           >
-            {/* Glowing backdrop behind card */}
             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-3xl opacity-30 blur-xl group-hover:opacity-50 transition duration-1000"></div>
             
             <div className="relative bg-white rounded-2xl shadow-2xl shadow-indigo-900/10 border border-slate-100 overflow-hidden p-2 sm:p-8">
@@ -143,7 +251,6 @@ export default function HomePage() {
                 disabled={isProcessing}
               />
               
-              {/* Error Toast */}
               <AnimatePresence>
                 {error && (
                   <motion.div 
@@ -157,7 +264,6 @@ export default function HomePage() {
                 )}
               </AnimatePresence>
 
-              {/* Actions */}
               {images.length > 0 && (
                 <motion.div 
                   initial={{ opacity: 0 }}
@@ -176,15 +282,41 @@ export default function HomePage() {
             </div>
           </motion.div>
         </section>
+
+        <section className="container mx-auto px-4 mb-24">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="max-w-6xl mx-auto"
+          >
+            <div className="text-center mb-10">
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Примеры обработки</h2>
+              <p className="text-slate-500 text-sm">Потяните слайдер, чтобы увидеть разницу</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {examples.map((ex) => (
+                <BeforeAfterCard 
+                  key={ex.id}
+                  beforeImage={ex.before}
+                  afterImage={ex.after}
+                  alt={ex.label}
+                  label={ex.label}
+                />
+              ))}
+            </div>
+          </motion.div>
+        </section>
         
-        {/* Results Section - Animate in when images exist */}
         <AnimatePresence>
           {images.length > 0 && (
             <motion.section 
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="container mx-auto px-4 mt-20"
+              className="container mx-auto px-4 mt-10 mb-20"
             >
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
@@ -214,7 +346,6 @@ export default function HomePage() {
           )}
         </AnimatePresence>
 
-        {/* Features Grid (Bento Box Style) */}
         <section id="features" className="container mx-auto px-4 mt-32">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Почему выбирают нас?</h2>
@@ -222,7 +353,6 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {/* Feature 1 */}
             <motion.div 
               whileHover={{ y: -5 }}
               className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col items-start"
@@ -236,7 +366,6 @@ export default function HomePage() {
               </p>
             </motion.div>
 
-            {/* Feature 2 */}
             <motion.div 
               whileHover={{ y: -5 }}
               className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col items-start relative overflow-hidden"
@@ -251,7 +380,6 @@ export default function HomePage() {
               </p>
             </motion.div>
 
-            {/* Feature 3 */}
             <motion.div 
               whileHover={{ y: -5 }}
               className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col items-start"
@@ -267,10 +395,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Use Cases - Bento Grid */}
         <section id="use-cases" className="container mx-auto px-4 mt-32 mb-20">
           <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-16 text-white relative overflow-hidden max-w-6xl mx-auto">
-            {/* Background Pattern */}
             <div className="absolute top-0 right-0 opacity-20">
               <svg width="400" height="400" viewBox="0 0 200 200">
                 <path fill="currentColor" d="M45.7,-76.3C58.9,-69.3,69.1,-57.6,76.3,-45.2C83.5,-32.8,87.6,-19.7,86.3,-7.1C85,5.5,78.3,17.6,69.9,28.6C61.5,39.6,51.4,49.5,40.3,56.8C29.2,64.1,17.1,68.8,4.3,70.2C-8.5,71.6,-22,69.7,-34.3,63.6C-46.6,57.5,-57.7,47.2,-65.3,35.1C-72.9,23,-77,9.1,-75.4,-3.8C-73.8,-16.7,-66.5,-28.6,-57.1,-38.7C-47.7,-48.8,-36.2,-57.1,-24.2,-64.8C-12.2,-72.5,-0.2,-79.6,13.1,-78.2C26.4,-76.8,52.8,-66.9,45.7,-76.3Z" transform="translate(100 100)" />
@@ -315,7 +441,6 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* Minimal Footer */}
       <footer className="bg-slate-50 py-12 border-t border-slate-200">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4 opacity-70">
