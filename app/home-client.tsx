@@ -1,6 +1,6 @@
 'use client';
 
-import { Image as ImageIcon, Zap, Download, Sparkles, Menu, X, CheckCircle2, ArrowRight, Layers, MoveHorizontal } from 'lucide-react';
+import { Image as ImageIcon, Zap, Download, Sparkles, CheckCircle2, ArrowRight, MoveHorizontal, Layers } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
@@ -126,7 +126,6 @@ const staggerContainer = {
 };
 
 export default function HomePage({ wpContent }: HomePageProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const {
     images,
     isProcessing,
@@ -139,102 +138,35 @@ export default function HomePage({ wpContent }: HomePageProps) {
 
   const title = wpContent?.title || 'Удаление фона за одну секунду';
   const description = wpContent?.description || 'Загрузите изображение и позвольте нашему ИИ сделать всю работу. Идеальная точность, прозрачный фон и никаких усилий.';
-  const buttonText = wpContent?.button || 'Попробовать';
-  const logoUrl = wpContent?.logo || null;
 
   const examples = [
     {
       id: 1,
       label: "Обувь",
-      before: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=600&auto=format&fit=crop",
+      before: "/orig_sneakers.jpg",
       after: "/sneakers.png"
     },
     {
       id: 2,
       label: "Одежда",
-      before: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop",
+      before: "/orig_clothes.jpg",
       after: "/clothes.png"
     },
     {
       id: 3,
       label: "Предметы",
-      before: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600&auto=format&fit=crop",
+      before: "/orig_headphones.jpg",
       after: "/headphones.png"
     }
   ];
 
   return (
     <div className="relative min-h-screen bg-slate-50 selection:bg-indigo-500/30 text-slate-900 overflow-hidden font-sans">
-      
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
         <div className="absolute top-[-10%] right-[0%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px]" />
         <div className="absolute top-[20%] left-[-10%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px]" />
       </div>
-
-      <motion.header 
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20 shadow-sm"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2 cursor-pointer group">
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt={title || 'BG Remover'}
-                  className="w-20 h-20 rounded-lg object-contain"
-                  draggable={false}
-                />
-              ) : (
-                <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-1.5 rounded-lg text-white group-hover:rotate-12 transition-transform">
-                  <Layers size={20} />
-                </div>
-              )}
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
-                BG Remover
-              </span>
-            </div>
-            
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Возможности</a>
-              <a href="#use-cases" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Применение</a>
-              <a href="#remove" className="px-5 py-2.5 text-sm font-medium text-white bg-slate-900 rounded-full hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 hover:shadow-slate-900/40">
-                <span className='text-white'>
-                  {buttonText}
-                </span>
-              </a>
-            </div>
-            
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-            >
-              {mobileMenuOpen ? <X /> : <Menu />}
-            </button>
-          </nav>
-        </div>
-        
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="md:hidden bg-white border-b border-slate-200 overflow-hidden"
-            >
-              <div className="px-4 py-6 space-y-4 flex flex-col">
-                <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-slate-600 font-medium">Возможности</a>
-                <a href="#use-cases" onClick={() => setMobileMenuOpen(false)} className="text-slate-600 font-medium">Применение</a>
-                <button className="w-full py-3 text-white bg-indigo-600 rounded-xl font-medium">
-                  Войти
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.header>
 
       <main className="pt-32 pb-20">
         <section id="remove" className="container mx-auto px-4 relative z-10 mb-20">
@@ -463,21 +395,6 @@ export default function HomePage({ wpContent }: HomePageProps) {
           </div>
         </section>
       </main>
-
-      <footer className="bg-slate-50 py-12 border-t border-slate-200">
-        <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4 opacity-70">
-            <Layers size={20} />
-            <span className="font-bold text-slate-900">BG Remover</span>
-          </div>
-          <p className="text-slate-500 text-sm mb-4">
-            © {new Date().getFullYear()} ИП Баландин Виталий Николаевич. Все права защищены.
-          </p>
-          <div className="text-xs text-slate-400">
-            ИНН 781005876562
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
