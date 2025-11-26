@@ -1,6 +1,6 @@
 'use client';
 
-import { Image as ImageIcon, Zap, Download, Sparkles, CheckCircle2, ArrowRight, MoveHorizontal, Layers } from 'lucide-react';
+import { Image as ImageIcon, Zap, Download, Sparkles, CheckCircle2, ArrowRight, MoveHorizontal, Coins, CreditCard, } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
@@ -162,6 +162,8 @@ export default function HomePage({ wpContent }: HomePageProps) {
 
   return (
     <div className="relative min-h-screen bg-slate-50 selection:bg-indigo-500/30 text-slate-900 overflow-hidden font-sans">
+      
+      {/* Background Aurora */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
         <div className="absolute top-[-10%] right-[0%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px]" />
         <div className="absolute top-[20%] left-[-10%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px]" />
@@ -169,6 +171,8 @@ export default function HomePage({ wpContent }: HomePageProps) {
       </div>
 
       <main className="pt-32 pb-20">
+        
+        {/* HERO SECTION */}
         <section id="remove" className="container mx-auto px-4 relative z-10 mb-20">
           <motion.div 
             initial="initial"
@@ -238,7 +242,8 @@ export default function HomePage({ wpContent }: HomePageProps) {
           </motion.div>
         </section>
 
-        <section className="container mx-auto px-4 mb-24">
+        {/* EXAMPLES SECTION */}
+        <section id="use-cases" className="container mx-auto px-4 mb-24">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -265,6 +270,7 @@ export default function HomePage({ wpContent }: HomePageProps) {
           </motion.div>
         </section>
         
+        {/* PROCESSED RESULTS SECTION */}
         <AnimatePresence>
           {images.length > 0 && (
             <motion.section 
@@ -301,6 +307,7 @@ export default function HomePage({ wpContent }: HomePageProps) {
           )}
         </AnimatePresence>
 
+        {/* FEATURES SECTION */}
         <section id="features" className="container mx-auto px-4 mt-32">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Почему выбирают нас?</h2>
@@ -350,6 +357,91 @@ export default function HomePage({ wpContent }: HomePageProps) {
           </div>
         </section>
 
+        {/* --- PRICING SECTION START --- */}
+        <section id="pricing" className="container mx-auto px-4 mt-32 relative">
+            <div className="text-center mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Простая арифметика</h2>
+                <p className="text-slate-500">Никаких подписок. Платите только за то, что используете.</p>
+            </div>
+
+            <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 items-stretch">
+                
+                {/* Free Card */}
+                <motion.div 
+                  whileHover={{ y: -5 }} 
+                  className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl flex flex-col relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 bg-slate-100 px-4 py-2 rounded-bl-2xl text-xs font-bold text-slate-500">СТАРТ</div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2">Пробный</h3>
+                    <div className="flex items-end gap-1 mb-6">
+                        <span className="text-4xl font-extrabold text-slate-900">0 ₽</span>
+                    </div>
+                    <ul className="space-y-4 mb-8 flex-1">
+                        <li className="flex items-center gap-3 text-slate-600">
+                            <CheckCircle2 size={18} className="text-green-500" />
+                            <span>1 фото бесплатно</span>
+                        </li>
+                        <li className="flex items-center gap-3 text-slate-600">
+                            <CheckCircle2 size={18} className="text-green-500" />
+                            <span>Доступ ко всем функциям</span>
+                        </li>
+                        <li className="flex items-center gap-3 text-slate-600">
+                            <CheckCircle2 size={18} className="text-green-500" />
+                            <span>Скачивание в HD</span>
+                        </li>
+                    </ul>
+                    <a 
+                        href="#remove"
+                        className="w-full block text-center py-3 rounded-xl border-2 border-slate-900 text-slate-900 font-bold hover:bg-slate-50 transition-colors"
+                    >
+                        Попробовать
+                    </a>
+                </motion.div>
+
+                {/* Paid Card */}
+                <motion.div 
+                  whileHover={{ y: -5 }} 
+                  className="bg-slate-900 p-8 rounded-3xl shadow-2xl shadow-indigo-900/20 text-white flex flex-col relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-[80px] -mr-16 -mt-16"></div>
+                    <div className="absolute top-0 right-0 bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-2 rounded-bl-2xl text-xs font-bold text-white">ВЫГОДНО</div>
+                    
+                    <h3 className="text-2xl font-bold mb-2">Пакет кредитов</h3>
+                    <div className="flex items-end gap-2 mb-1">
+                        <span className="text-4xl font-extrabold">0.5 ₽</span>
+                        <span className="text-slate-400 mb-1">/ фото</span>
+                    </div>
+                    <p className="text-indigo-200 text-sm mb-6">50 копеек за одну обработку</p>
+
+                    <div className="space-y-4 mb-8 border-t border-white/10 pt-6 flex-1">
+                        <div className="flex justify-between items-center">
+                            <span className="text-slate-300">Минимальное пополнение</span>
+                            <span className="font-bold">50 ₽</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-slate-300">Вы получаете</span>
+                            <span className="font-bold text-green-400 flex items-center gap-1">
+                                <Coins size={16} /> 100 кредитов
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-slate-300">Срок действия</span>
+                            <span className="font-bold">Бессрочно</span>
+                        </div>
+                    </div>
+
+                    <button className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 font-bold hover:shadow-lg hover:shadow-indigo-500/30 transition-all flex items-center justify-center gap-2">
+                        <CreditCard size={18} />
+                        Пополнить на 50 ₽
+                    </button>
+                    <p className="text-center text-xs text-slate-500 mt-4">Безопасная оплата картой РФ</p>
+                </motion.div>
+
+            </div>
+        </section>
+        {/* --- PRICING SECTION END --- */}
+
+        {/* USE CASES SECTION */}
         <section id="use-cases" className="container mx-auto px-4 mt-32 mb-20">
           <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-16 text-white relative overflow-hidden max-w-6xl mx-auto">
             <div className="absolute top-0 right-0 opacity-20">
