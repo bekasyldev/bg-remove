@@ -6,7 +6,8 @@ const isPublicRoute = createRouteMatcher([
     '/privacy',
     '/terms',
     '/offer',
-    '/'
+    '/',
+    '/api/(.*)'
 ])
 
 const authorizedParty = process.env.NODE_ENV === 'production' 

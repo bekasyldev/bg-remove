@@ -242,34 +242,6 @@ export default function HomePage({ wpContent }: HomePageProps) {
           </motion.div>
         </section>
 
-        {/* EXAMPLES SECTION */}
-        <section id="use-cases" className="container mx-auto px-4 mb-24">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-6xl mx-auto"
-          >
-            <div className="text-center mb-10">
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Примеры обработки</h2>
-              <p className="text-slate-500 text-sm">Потяните слайдер, чтобы увидеть разницу</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {examples.map((ex) => (
-                <BeforeAfterCard 
-                  key={ex.id}
-                  beforeImage={ex.before}
-                  afterImage={ex.after}
-                  alt={ex.label}
-                  label={ex.label}
-                />
-              ))}
-            </div>
-          </motion.div>
-        </section>
-        
         {/* PROCESSED RESULTS SECTION */}
         <AnimatePresence>
           {images.length > 0 && (
@@ -306,6 +278,36 @@ export default function HomePage({ wpContent }: HomePageProps) {
             </motion.section>
           )}
         </AnimatePresence>
+
+        {/* EXAMPLES SECTION */}
+        <section id="use-cases" className="container mx-auto px-4 mb-24">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="max-w-6xl mx-auto"
+          >
+            <div className="text-center mb-10">
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Примеры обработки</h2>
+              <p className="text-slate-500 text-sm">Потяните слайдер, чтобы увидеть разницу</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {examples.map((ex) => (
+                <BeforeAfterCard 
+                  key={ex.id}
+                  beforeImage={ex.before}
+                  afterImage={ex.after}
+                  alt={ex.label}
+                  label={ex.label}
+                />
+              ))}
+            </div>
+          </motion.div>
+        </section>
+        
+        
 
         {/* FEATURES SECTION */}
         <section id="features" className="container mx-auto px-4 mt-32">
