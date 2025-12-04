@@ -3,18 +3,21 @@
 import { Layers, Menu, X, Sparkles, Coins } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 
 interface HeaderProps {
   logoUrl?: string | null;
   buttonText?: string;
-  creditBalance?: number; 
 }
 
-export function Header({ logoUrl, buttonText = 'Попробовать', creditBalance = 0 }: HeaderProps) {
+export function Header({ logoUrl, buttonText = 'Попробовать' }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user } = useUser();
+  
+  const credits = (user?.publicMetadata?.credits as number) || 0;
+  const hasProcessedFirstImage = (user?.publicMetadata?.hasProcessedFirstImage as boolean) || false;
 
   // Handle scroll effect
   useEffect(() => {
@@ -97,7 +100,12 @@ export function Header({ logoUrl, buttonText = 'Попробовать', creditB
                 {/* Credits Badge */}
                 <div className="hidden lg:flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-bold border border-indigo-100 cursor-help" title="Ваш баланс">
                   <Coins size={14} />
-                  <span>{creditBalance} шт.</span>
+                  <span>{credits} {credits === 1 ? 'кредит' : 'кредитов'}</span>
+                  {!hasProcessedFirstImage && (
+                    <span className="text-green-600 ml-1">
+                      (+1 бесплатно)
+                    </span>
+                  )}
                 </div>
                 
                 <UserButton 
@@ -159,7 +167,7 @@ export function Header({ logoUrl, buttonText = 'Попробовать', creditB
                   <div className="flex items-center justify-between px-4">
                     <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
                       <Coins size={16} className="text-indigo-600"/>
-                      Баланс: {creditBalance}
+                      Баланс: {credits} {credits === 1 ? 'кредит' : 'кредитов'}
                     </div>
                     <UserButton />
                   </div>

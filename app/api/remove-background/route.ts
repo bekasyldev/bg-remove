@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { removeBackground } from '@imgly/background-removal-node';
 import { createHash } from 'crypto';
+import { auth } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/nextjs/server';
 
 const processedCache = new Map<string, { dataURL: string; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; 
@@ -20,6 +22,13 @@ function cleanCache() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Необходимо войти в систему для обработки изображений' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('image') as File;
 
@@ -45,6 +54,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check user credits and first image status
+    const clerk = await clerkClient();
+    const user = await clerk.users.getUser(userId);
+    
+    const hasProcessedFirstImage = (user.publicMetadata.hasProcessedFirstImage as boolean) || false;
+    const currentCredits = (user.publicMetadata.credits as number) || 0;
+    
+    // If not first image and no credits, reject
+    if (hasProcessedFirstImage && currentCredits < 1) {
+      return NextResponse.json(
+        { 
+          error: 'Недостаточно кредитов. Пожалуйста, пополните баланс.',
+          requiresPayment: true,
+          currentCredits: 0
+        },
+        { status: 402 } // Payment Required
+      );
+    }
 
     const bytes = await file.arrayBuffer();
     const inputBuffer = Buffer.from(bytes);
@@ -88,6 +115,29 @@ export async function POST(request: NextRequest) {
     // Cache the result
     processedCache.set(hash, { dataURL, timestamp: Date.now() });
 
+    // Deduct credit if not first image
+    let updatedCredits = currentCredits;
+    if (!hasProcessedFirstImage) {
+      // Mark first image as processed
+      await clerk.users.updateUserMetadata(userId, {
+        publicMetadata: {
+          ...user.publicMetadata,
+          hasProcessedFirstImage: true,
+          credits: currentCredits, // Keep current credits
+        },
+      });
+      console.log('✅ First image processed for user:', userId);
+    } else {
+      // Deduct 1 credit for subsequent images
+      updatedCredits = currentCredits - 1;
+      await clerk.users.updateUserMetadata(userId, {
+        publicMetadata: {
+          ...user.publicMetadata,
+          credits: updatedCredits,
+        },
+      });
+      console.log('✅ Credit deducted for user:', userId, '- Remaining:', updatedCredits);
+    }
 
     return NextResponse.json({
       success: true,
@@ -95,7 +145,9 @@ export async function POST(request: NextRequest) {
       originalName: file.name,
       size: resultBuffer.length,
       processingTime,
-      cached: false
+      cached: false,
+      creditsRemaining: updatedCredits,
+      wasFirstImage: !hasProcessedFirstImage,
     });
   } catch (error) {
     console.error('❌ Server-side background removal error:', error);

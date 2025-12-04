@@ -46,7 +46,17 @@ export function useImageProcessor() {
         });
 
         if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`);
+          const errorData = await response.json().catch(() => ({}));
+          
+          if (response.status === 401) {
+            throw new Error('Необходимо войти в систему для обработки изображений');
+          }
+          
+          if (response.status === 402) {
+            throw new Error(errorData.error || 'Недостаточно кредитов');
+          }
+          
+          throw new Error(errorData.error || `Server error: ${response.status}`);
         }
 
         const result = await response.json();
@@ -57,6 +67,13 @@ export function useImageProcessor() {
               ? { ...img, processedUrl: result.imageUrl, status: 'completed' }
               : img
           ));
+          
+          // Log credit info
+          if (result.wasFirstImage) {
+            console.log('🎉 First image processed for free!');
+          } else {
+            console.log(`💳 Credit used. Remaining: ${result.creditsRemaining}`);
+          }
         } else {
           throw new Error(result.error || 'Server processing failed');
         }

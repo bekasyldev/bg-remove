@@ -49,8 +49,16 @@ export async function POST(request: NextRequest) {
 
           await clerk.users.updateUserMetadata(userId, {
             publicMetadata: {
+              ...user.publicMetadata, // Preserve existing metadata including hasProcessedFirstImage
               credits: newCredits,
             },
+          });
+
+          console.log('✅ Credits added:', {
+            userId,
+            previousCredits: currentCredits,
+            addedCredits: credits,
+            newBalance: newCredits,
           });
 
         } catch (error) {
