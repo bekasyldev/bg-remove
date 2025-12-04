@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { ImageUploader } from '@/components/ImageUploader';
 import { ImagePreview } from '@/components/ImagePreview';
+import { useAuth } from '@clerk/nextjs';
 
 interface HomePageProps {
   wpContent?: {
@@ -126,6 +127,9 @@ const staggerContainer = {
 };
 
 export default function HomePage({ wpContent }: HomePageProps) {
+  const { userId, isSignedIn } = useAuth();
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
+  
   const {
     images,
     isProcessing,
@@ -135,6 +139,38 @@ export default function HomePage({ wpContent }: HomePageProps) {
     downloadProcessedImage,
     clearAll
   } = useImageProcessor();
+
+  const handlePayment = async () => {
+    if (!isSignedIn) {
+      window.location.href = '/sign-in';
+      return;
+    }
+
+    setIsCreatingPayment(true);
+    try {
+      const response = await fetch('/api/payment/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: 50,
+          credits: 100,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+      } else {
+        alert('Ошибка создания платежа. Попробуйте позже.');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Ошибка создания платежа. Попробуйте позже.');
+    } finally {
+      setIsCreatingPayment(false);
+    }
+  };
 
   const title = wpContent?.title || 'Удаление фона за одну секунду';
   const description = wpContent?.description || 'Загрузите изображение и позвольте нашему ИИ сделать всю работу. Идеальная точность, прозрачный фон и никаких усилий.';
@@ -432,9 +468,13 @@ export default function HomePage({ wpContent }: HomePageProps) {
                         </div>
                     </div>
 
-                    <button className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 font-bold hover:shadow-lg hover:shadow-indigo-500/30 transition-all flex items-center justify-center gap-2">
+                    <button 
+                        onClick={handlePayment}
+                        disabled={isCreatingPayment}
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 font-bold hover:shadow-lg hover:shadow-indigo-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                         <CreditCard size={18} />
-                        Пополнить на 50 ₽
+                        {isCreatingPayment ? 'Подготовка...' : 'Пополнить на 50 ₽'}
                     </button>
                     <p className="text-center text-xs text-slate-500 mt-4">Безопасная оплата картой РФ</p>
                 </motion.div>

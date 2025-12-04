@@ -39,7 +39,6 @@ export function useImageProcessor() {
         const formData = new FormData();
         formData.append('image', file);
 
-        console.log('Sending image to server for processing:', file.name);
 
         const response = await fetch('/api/remove-background', {
           method: 'POST',

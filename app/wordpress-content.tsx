@@ -19,7 +19,6 @@ export async function getWordPressContent(): Promise<WordPressContent> {
     const wpData = await getHomepageContent();
     
     if (!wpData || !wpData.acf) {
-      console.log('Using default content - no WordPress data');
       return defaultContent;
     }
 

@@ -10,16 +10,10 @@ const isPublicRoute = createRouteMatcher([
     '/api/(.*)'
 ])
 
-const authorizedParty = process.env.NODE_ENV === 'production' 
-  ? 'https://grayai.ru' 
-  : 'http://localhost:3000'
-
 export default clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
     await auth.protect()
   }
-}, {
-  authorizedParties: [authorizedParty]
 })
 
 export const config = {

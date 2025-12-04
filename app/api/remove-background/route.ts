@@ -45,13 +45,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🚀 Processing image on server:', file.name, 'Size:', file.size);
 
-    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const inputBuffer = Buffer.from(bytes);
 
-    // Check cache
+    // Checkx cache
     const hash = generateHash(inputBuffer);
     const cached = processedCache.get(hash);
     if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
@@ -90,7 +88,6 @@ export async function POST(request: NextRequest) {
     // Cache the result
     processedCache.set(hash, { dataURL, timestamp: Date.now() });
 
-    console.log('✅ Background removed successfully in', processingTime, 'ms, result size:', resultBuffer.length);
 
     return NextResponse.json({
       success: true,

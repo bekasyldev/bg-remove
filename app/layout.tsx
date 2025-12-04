@@ -39,6 +39,7 @@ export default function RootLayout({
           footerActionText: 'text-slate-600',
         }
       }}
+      allowedRedirectOrigins={['https://grayai.ru/api']}
       localization={ruRU}
     >
       <html lang="ru">
